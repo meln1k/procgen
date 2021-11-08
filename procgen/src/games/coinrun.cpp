@@ -35,6 +35,116 @@ std::vector<std::string> GROUND_THEMES = {"Dirt", "Grass", "Planet", "Sand", "Sn
 
 const int NUM_GROUND_THEMES = (int)(GROUND_THEMES.size());
 
+struct SectionParameters {
+    // direction of enemy movement. 0 is left, 1 is right
+    int enemy_direction;
+    // dy change per section, possible values are 0, 1, 2, 3
+    int dy;
+    // shall dy be inverted when curr_y >= 5
+    bool invert_dy;
+    // random coefficient for dx calculation. should be in range of rand(2 * _difficulty)
+    int dx_coefficient;
+    // probability of rendering a pit. values are rand(20)
+    int pit;
+    // pit width calculation. values are 0,1,2
+    int pit_x1;
+    int pit_x2;
+    // relative high the lava positon. 0.0-1.0, where 0 is the lowest possible level, 1 is the maximum
+    float pit_lava_height;
+    // when the pit is too big, a platform will be rendered. Paramteres are 0 or 1.
+    int pit_platform_x3;
+    int pit_platform_w1;
+    // saw rendering probability, values are 0-9
+    int saw_probability;
+    // relative saw position, 0.0-1.0
+    float saw_pos;
+    // probability of enemy appearing, 0-9
+    int enemy_probablity;
+    // relative enemy position, 0.0-1.0
+    float enemy_pos;
+    // relative crate position, 0.0-1.0
+    float crate_pos;
+    // if the pile of crates should be created
+    bool crate_pile;
+    // hight of the pile. possible values: 0,1,2
+    int pile_height;
+
+};
+
+std::vector<SectionParameters> default_section_params() {
+    std::vector<SectionParameters> params;
+    for(int i=0;i<6;i++) {
+
+        SectionParameters sp = {
+            1, // int enemy_direction;
+            1, // int dy;
+            true, // bool invert_dy;
+            3, // int dx_coefficient;
+            18, // int pit;
+            1, // int pit_x1;
+            2, // int pit_x2;
+            0.7, // float pit_lava_height;
+            1, // int pit_platform_x3;
+            1, // int pit_platform_w1;
+            9, // int saw_probability;
+            0.5, // float saw_pos;
+            1, // int enemy_probablity;
+            0.5, // float enemy_pos;
+            0.5, // float crate_pos;
+            true, // bool crate_pile;
+            2 // int pile_height;
+        };
+        params.push_back(sp);
+    };
+
+    return params;
+};
+
+const std::vector<SectionParameters> default_section_parameters = default_section_params();
+
+class CoinrunParameters {
+    public:     
+      CoinrunParameters() : CoinrunParameters(3, 1, 0, default_section_parameters) {
+
+      }
+      CoinrunParameters(int difficulty, int danger_type, int ground_theme, std::vector<SectionParameters> params) {
+          fassert(difficulty >= 1 && difficulty <= 3);
+          fassert(danger_type >= 0 && danger_type <= 2);
+          fassert(ground_theme >= 0 && ground_theme < NUM_GROUND_THEMES);
+          for (const auto& sp : params) {
+              fassert(sp.enemy_direction >= 0 && sp.enemy_direction <=1);
+              fassert(sp.dy >= 0 && sp.dy <= 3);
+              fassert(sp.dx_coefficient >= 0 && sp.dx_coefficient <  2*difficulty);
+              fassert(sp.pit >= 0 && sp.pit < 20);
+              fassert(sp.pit_x1 >= 0 && sp.pit_x1 <= 2);
+              fassert(sp.pit_x2 >= 0 && sp.pit_x2 <= 2);
+              fassert(sp.pit_lava_height >= 0.0 && sp.pit_lava_height <= 1.0);
+              fassert(sp.pit_platform_x3 >= 0 && sp.pit_platform_x3 <= 1);
+              fassert(sp.pit_platform_w1 >= 0 && sp.pit_platform_w1 <= 1);
+              fassert(sp.saw_probability >= 0 && sp.saw_probability <= 9);
+              fassert(sp.saw_pos >= 0.0 && sp.saw_pos <= 1.0);
+              fassert(sp.enemy_probablity >= 0 && sp.enemy_probablity <= 9);
+              fassert(sp.enemy_pos >= 0.0 && sp.enemy_pos <= 1.0);
+              fassert(sp.crate_pos >= 0.0 && sp.crate_pos <= 1.0);
+              fassert(sp.pile_height >= 0 && sp.pile_height <= 2);
+          }
+          _difficulty = difficulty;
+          _danger_type = danger_type;
+          _ground_theme = ground_theme;
+          section_params = params;
+      }
+      // Envoronment diffuculty, can be 1, 2 or 3
+      int _difficulty;
+      // Type of the danger. Lava block, saw or the enemy. Possble values: 0, 1, 2
+      int _danger_type;
+      // texture theme. Should be a rand(NUM_GROUND_THEMES);
+      int _ground_theme;
+      // random paramters for generating a section.
+      // lenght must be equal to rand(_difficulty) + _difficulty
+      std::vector<SectionParameters> section_params;
+};
+
+
 class CoinRun : public BasicAbstractGame {
   public:
     std::shared_ptr<Entity> goal;
@@ -45,6 +155,7 @@ class CoinRun : public BasicAbstractGame {
     bool is_on_crate = false;
     float gravity = 0.0f;
     float air_control = 0.0f;
+    const CoinrunParameters config;
 
     CoinRun()
         : BasicAbstractGame(NAME) {
@@ -224,6 +335,10 @@ class CoinRun : public BasicAbstractGame {
         return BasicAbstractGame::image_for_type(type);
     }
 
+    int scale_random(float rand, int scale) {
+        return (int)std::round(rand * scale);
+    }
+
     void fill_block_top(int x, int y, int dx, int dy, char fill, char top) {
         fassert(dy > 0);
         fill_elem(x, y, dx, dy - 1, fill);
@@ -249,8 +364,8 @@ class CoinRun : public BasicAbstractGame {
         add_entity(x + .5, y + .5, 0, 0, .5, SAW);
     }
 
-    void create_enemy(int x, int y) {
-        auto ent = add_entity(x + .5, y + .5, .15 * (rand_gen.randn(2) * 2 - 1), 0, .5, ENEMY);
+    void create_enemy(int x, int y, int direction) {
+        auto ent = add_entity(x + .5, y + .5, .15 * (direction * 2 - 1), 0, .5, ENEMY);
         ent->smart_step = true;
         ent->image_type = ENEMY1;
         ent->render_z = 1;
@@ -263,15 +378,14 @@ class CoinRun : public BasicAbstractGame {
     }
 
     void generate_coin_to_the_right() {
-        int max_difficulty = 3;
-        int dif = rand_gen.randn(max_difficulty) + 1;
+        int dif = config._difficulty;
 
-        int num_sections = rand_gen.randn(dif) + dif;
+        int num_sections = config.section_params.size();
         int curr_x = 5;
         int curr_y = 1;
 
         int pit_threshold = dif;
-        int danger_type = rand_gen.randn(3);
+        int danger_type = config._danger_type;
 
         bool allow_pit = (options.debug_mode & (1 << 1)) == 0;
         bool allow_crate = (options.debug_mode & (1 << 2)) == 0;
@@ -292,11 +406,13 @@ class CoinRun : public BasicAbstractGame {
         }
 
         for (int section_idx = 0; section_idx < num_sections; section_idx++) {
+            const SectionParameters& params = config.section_params[section_idx];
+
             if (curr_x + 15 >= w) {
                 break;
             }
 
-            int dy = rand_gen.randn(4) + 1 + int(dif / 3);
+            int dy = params.dy + 1 + int(dif / 3);
 
             if (!allow_dy) {
                 dy = 0;
@@ -308,11 +424,11 @@ class CoinRun : public BasicAbstractGame {
 
             if (curr_y >= 20) {
                 dy *= -1;
-            } else if (curr_y >= 5 && rand_gen.randn(2) == 1) {
+            } else if (curr_y >= 5 && params.invert_dy) {
                 dy *= -1;
             }
 
-            int dx = rand_gen.randn(2 * dif) + 3 + int(dif / 3);
+            int dx = params.dx_coefficient + 3 + int(dif / 3);
 
             curr_y += dy;
 
@@ -320,11 +436,11 @@ class CoinRun : public BasicAbstractGame {
                 curr_y = 1;
             }
 
-            bool use_pit = allow_pit && (dx > 7) && (curr_y > 3) && (rand_gen.randn(20) >= pit_threshold);
+            bool use_pit = allow_pit && (dx > 7) && (curr_y > 3) && (params.pit >= pit_threshold);
 
             if (use_pit) {
-                int x1 = rand_gen.randn(3) + 1;
-                int x2 = rand_gen.randn(3) + 1;
+                int x1 = params.pit_x1 + 1;
+                int x2 = params.pit_x2 + 1;
                 int pit_width = dx - x1 - x2;
 
                 if (pit_width > max_dx) {
@@ -335,7 +451,7 @@ class CoinRun : public BasicAbstractGame {
                 fill_ground_block(curr_x, 0, x1, curr_y);
                 fill_ground_block(curr_x + dx - x2, 0, x2, curr_y);
 
-                int lava_height = rand_gen.randn(curr_y - 3) + 1;
+                int lava_height = scale_random(params.pit_lava_height, curr_y-3) + 1;
 
                 if (danger_type == 0) {
                     fill_lava_block(curr_x + x1, 1, pit_width, lava_height);
@@ -345,21 +461,21 @@ class CoinRun : public BasicAbstractGame {
                     }
                 } else if (danger_type == 2) {
                     for (int ei = 0; ei < pit_width; ei++) {
-                        create_enemy(curr_x + x1 + ei, 1);
+                        create_enemy(curr_x + x1 + ei, 1, params.enemy_direction);
                     }
                 }
 
                 if (pit_width > 4) {
                     int x3, w1;
                     if (pit_width == 5) {
-                        x3 = 1 + rand_gen.randn(2);
-                        w1 = 1 + rand_gen.randn(2);
+                        x3 = 1 + params.pit_platform_x3;
+                        w1 = 1 + params.pit_platform_w1; 
                     } else if (pit_width == 6) {
-                        x3 = 2 + rand_gen.randn(2);
-                        w1 = 1 + rand_gen.randn(2);
+                        x3 = 2 + params.pit_platform_x3;
+                        w1 = 1 + params.pit_platform_w1; 
                     } else {
-                        x3 = 2 + rand_gen.randn(2);
-                        int x4 = 2 + rand_gen.randn(2);
+                        x3 = 2 + params.pit_platform_x3;
+                        int x4 = 2 + params.pit_platform_w1;
                         w1 = pit_width - x3 - x4;
                     }
 
@@ -367,28 +483,29 @@ class CoinRun : public BasicAbstractGame {
                 }
 
             } else {
+                
                 fill_ground_block(curr_x, 0, dx, curr_y);
 
                 int ob1_x = -1;
                 int ob2_x = -1;
 
-                if (rand_gen.randn(10) < (2 * dif) && dx > 3) {
-                    ob1_x = curr_x + rand_gen.randn(dx - 2) + 1;
+                if (params.saw_probability < (2 * dif) && dx > 3) {
+                    ob1_x = curr_x + scale_random(params.saw_pos, dx-2) + 1;
                     create_saw_enemy(ob1_x, curr_y);
                 }
 
-                if (rand_gen.randn(10) < dif && dx > 3 && (max_dx >= 4) && allow_monsters) {
-                    ob2_x = curr_x + rand_gen.randn(dx - 2) + 1;
+                if (params.enemy_probablity < dif && dx > 3 && (max_dx >= 4) && allow_monsters) {
+                    ob2_x = curr_x + scale_random(params.enemy_pos, dx-2) + 1;
 
-                    create_enemy(ob2_x, curr_y);
+                    create_enemy(ob2_x, curr_y, params.enemy_direction);
                 }
 
                 if (allow_crate) {
                     for (int i = 0; i < 2; i++) {
-                        int crate_x = curr_x + rand_gen.randn(dx - 2) + 1;
+                        int crate_x = curr_x + scale_random(params.crate_pos, dx-2) + 1;
 
-                        if (rand_gen.randn(2) == 1 && ob1_x != crate_x && ob2_x != crate_x) {
-                            int pile_height = rand_gen.randn(3) + 1;
+                        if (params.crate_pile && ob1_x != crate_x && ob2_x != crate_x) {
+                            int pile_height = params.pile_height + 1;
 
                             for (int j = 0; j < pile_height; j++) {
                                 create_crate(crate_x, curr_y + j);
@@ -429,7 +546,7 @@ class CoinRun : public BasicAbstractGame {
             background_index = 0;
         } else {
             choose_random_theme(agent);
-            wall_theme = rand_gen.randn(NUM_GROUND_THEMES);
+            wall_theme = config._ground_theme;
         }
 
         agent->rx = .5;
