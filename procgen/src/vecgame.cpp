@@ -454,4 +454,12 @@ extern "C" {
         // next time VecGame::observe() is called, the correct data will be in the buffers
         venv->games.at(env_idx)->observe();
     }
+
+    LIBENV_API void set_environment(libenv_env *handle, int env_idx, char *data, int length) {
+        auto venv = (VecGame *)(handle);
+        venv->wait_for_stepping_threads();
+        auto b = ReadBuffer(data, length);
+        venv->games.at(env_idx)->set_environment(&b);
+        fassert(b.read_int() == END_OF_BUFFER);
+    }
 }

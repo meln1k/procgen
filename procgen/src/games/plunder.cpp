@@ -275,6 +275,9 @@ class PlunderGame : public BasicAbstractGame {
         legend_r = b->read_float();
         min_agent_x = b->read_float();
     }
+
+    void set_environment(ReadBuffer *b) override {}
+
 };
 
 REGISTER_GAME(NAME, PlunderGame);

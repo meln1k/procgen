@@ -133,6 +133,8 @@ class MazeGame : public BasicAbstractGame {
         maze_dim = b->read_int();
         world_dim = b->read_int();
     }
+
+    void set_environment(ReadBuffer *b) override {}
 };
 
 REGISTER_GAME(NAME, MazeGame);

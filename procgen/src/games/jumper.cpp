@@ -466,6 +466,8 @@ class Jumper : public BasicAbstractGame {
         fassert(goal_idx >= 0);
         goal = entities[goal_idx];
     }
+
+    void set_environment(ReadBuffer *b) override {}
 };
 
 REGISTER_GAME(NAME, Jumper);

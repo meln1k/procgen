@@ -76,6 +76,8 @@ class Game {
     RandGen level_seed_rand_gen;
     RandGen rand_gen;
 
+    bool manual_seeding = false;
+
     StepData step_data;
     int action = 0;
 
@@ -119,6 +121,7 @@ class Game {
     virtual void game_draw(QPainter &p, const QRect &rect) = 0;
     virtual void serialize(WriteBuffer *b);
     virtual void deserialize(ReadBuffer *b);
+    virtual void set_environment(ReadBuffer *b) = 0;
 
   private:
     int reset_count = 0;

@@ -5,6 +5,8 @@
 #include "../mazegen.h"
 #include "../cpp-utils.h"
 #include "../qt-utils.h"
+#include <sstream>
+#include <string>
 
 const std::string NAME = "coinrun";
 
@@ -45,6 +47,9 @@ class CoinRun : public BasicAbstractGame {
     bool is_on_crate = false;
     float gravity = 0.0f;
     float air_control = 0.0f;
+
+    // length should be in between 1-6
+    std::vector<int> section_seeds;
 
     CoinRun()
         : BasicAbstractGame(NAME) {
@@ -266,7 +271,14 @@ class CoinRun : public BasicAbstractGame {
         int max_difficulty = 3;
         int dif = rand_gen.randn(max_difficulty) + 1;
 
-        int num_sections = rand_gen.randn(dif) + dif;
+        int num_sections = 0;
+        
+        if (manual_seeding) {
+            num_sections = section_seeds.size();
+        } else {
+            num_sections = rand_gen.randn(dif) + dif;
+        }
+        
         int curr_x = 5;
         int curr_y = 1;
 
@@ -292,6 +304,9 @@ class CoinRun : public BasicAbstractGame {
         }
 
         for (int section_idx = 0; section_idx < num_sections; section_idx++) {
+            if (manual_seeding) {
+                rand_gen.seed(section_seeds[section_idx]);
+            }
             if (curr_x + 15 >= w) {
                 break;
             }
@@ -518,6 +533,28 @@ class CoinRun : public BasicAbstractGame {
         gravity = b->read_float();
         air_control = b->read_float();
     }
+
+    // read a csv of seeds from the buffer.
+    // TODO: use a read_vector_int instead
+    void set_environment(ReadBuffer *b) override {
+        manual_seeding = true;
+        section_seeds.clear();
+        auto params = b->read_string();
+        std::stringstream stream(params);
+        std::string section_seed;
+        int param_idx = 0;
+        while(std::getline(stream, section_seed, ',')) {
+            auto seed = std::stoi(section_seed);
+            if (param_idx == 0) {
+                current_level_seed = seed;
+            } else {
+                section_seeds.push_back(seed);
+            }
+            
+            param_idx++;
+        }
+    }
+
 };
 
 REGISTER_GAME(NAME, CoinRun);

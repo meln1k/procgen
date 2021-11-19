@@ -440,6 +440,9 @@ class StarPilotGame : public BasicAbstractGame {
 
         init_hps();
     }
+
+    void set_environment(ReadBuffer *b) override {}
+
 };
 
 REGISTER_GAME(NAME, StarPilotGame);

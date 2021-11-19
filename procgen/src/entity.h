@@ -56,4 +56,5 @@ class Entity {
     void face_direction(float dx, float dy, float rotation_offset = 0);
     void serialize(WriteBuffer *b);
     void deserialize(ReadBuffer *b);
+    void set_environment(ReadBuffer *b);
 };

@@ -464,6 +464,8 @@ class DodgeballGame : public BasicAbstractGame {
         num_enemies = b->read_int();
         enemy_fire_delay = b->read_int();
     }
+
+    void set_environment(ReadBuffer *b) override {}
 };
 
 REGISTER_GAME(NAME, DodgeballGame);
