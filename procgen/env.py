@@ -5,7 +5,7 @@ from typing import Sequence, Optional, List
 import gym3
 from gym3.libenv import CEnv
 import numpy as np
-from .build import build
+from .builder import build
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -132,6 +132,7 @@ class BaseProcgenEnv(CEnv):
             c_func_defs=[
                 "int get_state(libenv_env *, int, char *, int);",
                 "void set_state(libenv_env *, int, char *, int);",
+                "void set_environment(libenv_env *, int, char *, int);",
             ],
         )
         # don't use the dict space for actions
@@ -151,6 +152,36 @@ class BaseProcgenEnv(CEnv):
         for env_idx in range(self.num):
             state = states[env_idx]
             self.call_c_func("set_state", env_idx, state, len(state))
+            
+
+    def set_environment(self, params: List[List[int]]):
+        '''Sets the parameters controlling the procedurial generation of the environment
+
+            Args:
+                params: vector of vectors with random seeds that controls the different generation aspects (depending on the environment).
+                        The length of the outer vector should equal to the number of the environments.
+                        The first value of the vector is used for the global seeding (textures and assets),
+                        the rest are the environment-specific seed parameters
+
+        '''
+        assert len(params) == self.num
+        for env_idx in range(self.num):
+            param = params[env_idx]
+            # todo: using a string here is a workaround.
+            # A real array of ints should be passed to C++ instead.
+
+            # CSV is the easiest serialization here
+            param_csv = ','.join(map(str, param))
+            # C++ code expects fixed width code points! don't use anything than ASCII here (despite it says UTF-8).
+            # in case for numbers it is fine though
+            bytes_csv = param_csv.encode('UTF-8')
+            # ReadBuffer expects the variable lenght encoding, thus we append the size of the string
+            bytes_size = (len(param_csv)).to_bytes(4, byteorder="little", signed=True)
+            # CAFECAFE is the marker of the end of buffer
+            buffer_end = 0xCAFECAFE.to_bytes(4, byteorder="little", signed=False)
+            # the complete byte array ready for ReadBuffer
+            payload =  bytes_size + bytes_csv + buffer_end
+            self.call_c_func("set_environment", env_idx, payload, len(payload))
 
     def get_combos(self):
         return [

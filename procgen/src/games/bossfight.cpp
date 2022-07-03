@@ -475,6 +475,9 @@ class BossfightGame : public BasicAbstractGame {
         fassert(shields_idx >= 0);
         shields = entities[shields_idx];
     }
+
+    void set_environment(ReadBuffer *b) override {}
+
 };
 
 REGISTER_GAME(NAME, BossfightGame);

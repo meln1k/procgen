@@ -116,6 +116,8 @@ class BigFish : public BasicAbstractGame {
         fish_eaten = b->read_int();
         r_inc = b->read_float();
     }
+
+    void set_environment(ReadBuffer *b) override {}
 };
 
 REGISTER_GAME(NAME, BigFish);

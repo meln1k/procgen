@@ -22,7 +22,7 @@ class ProcgenInteractive(Interactive):
         super()._update(dt, keys_clicked, keys_pressed)
 
 
-def make_interactive(vision, record_dir, **kwargs):
+def make_interactive(vision, record_dir, level_seeds, **kwargs):
     info_key = None
     ob_key = None
     if vision == "human":
@@ -32,6 +32,9 @@ def make_interactive(vision, record_dir, **kwargs):
         ob_key = "rgb"
 
     env = ProcgenGym3Env(num=1, **kwargs)
+    if level_seeds is not None:
+        env.set_environment([level_seeds])
+        
     if record_dir is not None:
         env = VideoRecorderWrapper(
             env=env, directory=record_dir, ob_key=ob_key, info_key=info_key
@@ -71,6 +74,10 @@ def main():
     )
     parser.add_argument(
         "--level-seed", type=int, help="select an individual level to use"
+    )
+
+    parser.add_argument(
+        "--level-seeds", type=int, nargs='+', help="select a seed sequence used for level generation"
     )
 
     advanced_group = parser.add_argument_group("advanced optional switch arguments")
@@ -127,7 +134,7 @@ def main():
         kwargs["start_level"] = args.level_seed
         kwargs["num_levels"] = 1
     ia = make_interactive(
-        args.vision, record_dir=args.record_dir, env_name=args.env_name, **kwargs
+        args.vision, record_dir=args.record_dir, level_seeds=args.level_seeds, env_name=args.env_name, **kwargs
     )
     ia.run()
 

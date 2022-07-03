@@ -410,6 +410,8 @@ class ChaserGame : public BasicAbstractGame {
         orbs_collected = b->read_int();
         maze_dim = b->read_int();
     }
+
+    void set_environment(ReadBuffer *b) override {}
 };
 
 REGISTER_GAME(NAME, ChaserGame);

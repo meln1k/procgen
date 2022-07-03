@@ -299,6 +299,8 @@ class LeaperGame : public BasicAbstractGame {
         water_lane_speeds = b->read_vector_float();
         goal_y = b->read_int();
     }
+
+    void set_environment(ReadBuffer *b) override {}
 };
 
 REGISTER_GAME(NAME, LeaperGame);
