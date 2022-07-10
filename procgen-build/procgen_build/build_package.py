@@ -23,16 +23,10 @@ def main():
         }
     )
     if platform.system() == "Linux":
-        if "TRAVIS_TAG" in os.environ:
+        if "GITHUB_REF" in os.environ:
             # pass TRAVIS_TAG to the container so that it can build wheels with the correct version number
-            os.environ["CIBW_ENVIRONMENT"] = (
-                os.environ["CIBW_ENVIRONMENT"]
-                + " TRAVIS_TAG=" + os.environ["TRAVIS_TAG"]
-            )
-        os.environ["CIBW_ENVIRONMENT"] = (
-            os.environ["CIBW_ENVIRONMENT"]
-            + f" CACHE_DIR=/host{os.getcwd()}/cache"
-        )
+            os.environ["CIBW_ENVIRONMENT"] = os.environ["CIBW_ENVIRONMENT"] + " GITHUB_REF=" + os.environ["GITHUB_REF"]
+        os.environ["CIBW_ENVIRONMENT"] = os.environ["CIBW_ENVIRONMENT"] + f" CACHE_DIR=/host{os.getcwd()}/cache"
     else:
         os.environ["CACHE_DIR"] = os.path.join(os.getcwd(), "cache")
 

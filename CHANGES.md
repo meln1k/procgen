@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.10.7
+
+* Custom `ToBaselinesVecEnv` to support `VecVideoRecorder` from @bragajj: https://github.com/openai/procgen/pull/62
+
+## 0.10.6
+
+* Change supported pythons to be 3.7-3.10
+
+## 0.10.5
+
+* No changes
+
 ## 0.10.4
 
 * Support `render_mode` to gym environment and update docs to remove references to the confusing `render=True` option.
