@@ -221,6 +221,8 @@ class HeistGame : public BasicAbstractGame {
         world_dim = b->read_int();
         has_keys = b->read_vector_bool();
     }
+
+    void set_environment(ReadBuffer *b) override {}
 };
 
 REGISTER_GAME(NAME, HeistGame);

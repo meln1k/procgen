@@ -322,6 +322,8 @@ class MinerGame : public BasicAbstractGame {
         BasicAbstractGame::deserialize(b);
         diamonds_remaining = b->read_int();
     }
+
+    void set_environment(ReadBuffer *b) override {}
 };
 
 REGISTER_GAME(NAME, MinerGame);

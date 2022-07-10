@@ -322,6 +322,9 @@ class CaveFlyerGame : public BasicAbstractGame {
 
         erase_if_needed();
     }
+
+    void set_environment(ReadBuffer *b) override {}
+
 };
 
 REGISTER_GAME(NAME, CaveFlyerGame);

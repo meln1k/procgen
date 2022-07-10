@@ -94,11 +94,13 @@ void Game::reset() {
     reset_count++;
 
     if (episodes_remaining == 0) {
-        if (options.use_sequential_levels && step_data.level_complete) {
-            // prevent overflow in seed sequences
-            current_level_seed = (int32_t)(current_level_seed + 997);
-        } else {
-            current_level_seed = level_seed_rand_gen.randint(level_seed_low, level_seed_high);
+        if (!manual_seeding) {
+            if (options.use_sequential_levels && step_data.level_complete) {
+                // prevent overflow in seed sequences
+                current_level_seed = (int32_t)(current_level_seed + 997);
+            } else {
+                current_level_seed = level_seed_rand_gen.randint(level_seed_low, level_seed_high);
+            }
         }
 
         episodes_remaining = 1;

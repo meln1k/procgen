@@ -275,6 +275,8 @@ class FruitBotGame : public BasicAbstractGame {
         bullet_vscale = b->read_float();
         last_fire_time = b->read_int();
     }
+
+    void set_environment(ReadBuffer *b) override {}
 };
 
 REGISTER_GAME(NAME, FruitBotGame);
